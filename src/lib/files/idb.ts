@@ -10,6 +10,7 @@
  */
 
 import {Database} from '../../config/databases';
+import DATABASE_STATE from '../../config/databases/state';
 import Modes from '../../config/modes';
 import makeError from '../../helpers/makeError';
 import safeAssign from '../../helpers/object/safeAssign';
@@ -51,7 +52,7 @@ export class IDB {
   constructor(db: Database<any>) {
     safeAssign(this, db);
 
-    if(Modes.test) {
+    if (Modes.test && !this.name.endsWith('_test')) {
       this.name += '_test';
     }
 
@@ -141,7 +142,7 @@ export class IDB {
 
           this.openDatabase(calledNew = true);
 
-          if(transaction.onerror) {
+          if (transaction.onerror) {
             transaction.onerror(e);
           }
 
@@ -175,7 +176,7 @@ export class IDB {
             //}
           } */
 
-          if(!db.objectStoreNames.contains(store.name)) {
+          if (!db.objectStoreNames.contains(store.name)) {
             createObjectStore(db, store);
           } else {
             const txn = target.transaction;
@@ -189,6 +190,141 @@ export class IDB {
 
   public static create<T extends Database<any>>(db: T) {
     return this.INSTANCES.find((instance) => instance.name === db.name) ?? new IDB(db);
+  }
+
+  public static async clone(fromName: string, toName: string): Promise<boolean> {
+    if (Modes.test) {
+      fromName += '_test';
+      toName += '_test';
+    }
+   
+    let fromDb = this.INSTANCES.find((instance) => instance.name === fromName);   
+    if (!fromDb) {
+      const dbs = await indexedDB.databases();
+      if (dbs.some(db => db.name == fromName)) {
+        fromDb = new IDB({ ...DATABASE_STATE, ...{ name: fromName } });      
+      } else {
+        return false;
+      }
+    }
+
+    await this.clear(toName);
+   
+    const toDb = new IDB({ ...DATABASE_STATE, ...{ name: toName } });
+        
+    // if (!fromDb.isAvailable()) {
+    await fromDb.openDatabase(true);
+    // }
+
+    // if(!  toDb.isAvailable()){
+    await toDb.openDatabase(true);
+    // }
+  
+    
+    for (const store of fromDb.stores) {
+      await new Promise((resolve, reject) => {
+       
+        const tx = fromDb.db.transaction(store.name, 'readonly')
+
+        const request = tx.objectStore(store.name).openCursor()
+        request.onsuccess = (e => {         
+          //@ts-ignore
+          const cursor = e.target.result;
+
+          if (cursor) {          
+            /**
+             * Maybe you don't need to create it for every cursor.
+             *  But then it closes itself and becomes inactive.
+             *  There is no time to fix errors, so...
+             */
+            const newTx = toDb.db.transaction(store.name, 'readwrite');
+            const newStore = newTx.objectStore(store.name);
+
+            newStore.put(cursor.value, cursor.key)
+
+            cursor.continue();
+          } else {            
+            resolve(e);
+          }
+        })
+
+        request.onerror = (e) => {        
+          reject(e);
+        };
+      });
+    }
+
+    toDb.db.close();
+    fromDb.db.close();
+   
+    return true;
+  }
+
+  public static async delete(name: string) {
+    if (Modes.test  && !name.endsWith('_test')) {
+      name += '_test';
+    }
+   
+    const index = this.INSTANCES.findIndex((instance) => instance.name === name);
+
+    let db:IDB;
+    if(index !== -1){     
+      db = this.INSTANCES.splice(index,1)[0];
+    }
+    if(db){    
+      db.db.onclose = () => { };    
+      db.db.close();
+    }
+
+    await new Promise((resolve, reject) => {     
+      const request = indexedDB.deleteDatabase(name);
+
+      request.onsuccess = (e) => {             
+        resolve(e);
+      };
+
+      request.onerror = () => {        
+        reject();
+      };
+    })   
+  }
+
+  public static async clear(name: string, keep:string[] = []) {
+    if (Modes.test) {
+      name += '_test';
+    }
+
+    let db = this.INSTANCES.find((instance) => instance.name === name);
+    if (!db) {
+      const dbs = await indexedDB.databases();
+      if (dbs.some(db => db.name == name)) {
+        db = new IDB({ ...DATABASE_STATE, ...{ name: name } });
+      } else {
+        return;
+      }
+    }
+
+    await db.openDatabase(true);
+    const objectStoreNames = Array.from(db.db.objectStoreNames);
+    for (let storeName of objectStoreNames) {
+      if(keep.includes(storeName)){
+        continue;
+      }
+      await new Promise((resolve, reject) => {
+        var transaction = db.db.transaction([storeName], "readwrite");
+        var objectStore = transaction.objectStore(storeName);
+        var objectStoreRequest = objectStore.clear();
+
+        objectStoreRequest.onsuccess = (e) => {
+          resolve(e);
+        };
+
+        objectStoreRequest.onerror = (e) => {
+          reject();
+        };
+      });
+    };
+
   }
 
   public static closeDatabases(preserve?: IDB) {

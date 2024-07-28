@@ -13,7 +13,7 @@ import type {UserAuth} from './mtproto_config';
 import type {DcAuthKey, DcId, DcServerSalt, InvokeApiOptions} from '../../types';
 import type {MethodDeclMap} from '../../layer';
 import type TcpObfuscated from './transports/tcpObfuscated';
-import sessionStorage from '../sessionStorage';
+import sessionStorage, {AuthDataSingle } from '../sessionStorage';
 import MTPNetworker, {MTMessage} from './networker';
 import {ConnectionType, constructTelegramWebSocketUrl, DcConfigurator, TransportType} from './dcConfigurator';
 import {logger} from '../logger';
@@ -298,6 +298,7 @@ export class ApiManager extends ApiManagerMethods {
     }
 
     // WebPushApiManager.forceUnsubscribe(); // WARNING // moved to worker's master
+    await  this.multipleAccountManager.onLogOut();
     const storageResult = await Promise.all(storageKeys.map((key) => sessionStorage.get(key)));
 
     const logoutPromises: Promise<any>[] = [];
@@ -450,11 +451,51 @@ export class ApiManager extends ApiManagerMethods {
         throw error;
       }
 
-      this.changeNetworkerTransport(networker, transport);
-      networkers.unshift(networker);
-      this.setOnDrainIfNeeded(networker);
-      return networker;
-    });
+          this.changeNetworkerTransport(networker, transport);
+          networkers.unshift(networker);
+          this.setOnDrainIfNeeded(networker);
+          return networker;
+        });
+   
+  }
+
+  public async getNetworkerForAuth(authData: AuthDataSingle): Promise<MTPNetworker>{
+    const connectionType: ConnectionType = 'client';
+    const transportType = this.getTransportType(connectionType);
+
+        const ak: DcAuthKey = `dc${authData.dc}_auth_key` as any;
+        const ss: DcServerSalt = `dc${authData.dc}_server_salt` as any;
+        const authKeyHex = authData[ak];
+        let serverSaltHex = authData[ss];
+             
+        if(serverSaltHex?.length !== 16) {
+          serverSaltHex = 'AAAAAAAAAAAAAAAA';
+        }
+
+        const authKey = bytesFromHex(authKeyHex);
+        const authKeyId = (await CryptoWorker.invokeCrypto('sha1', authKey)).slice(-8);
+        const serverSalt = bytesFromHex(serverSaltHex);
+      
+        let transport = this.chooseServer(authData.dc, connectionType, transportType);
+         const networker = this.networkerFactory.getNetworker(authData.dc, authKey, authKeyId, serverSalt, { 
+          dcId:authData.dc,
+         } );
+
+
+         const newTransportType = this.getTransportType(connectionType);
+         if (newTransportType !== transportType) {        
+           transport.destroy();
+           DcConfigurator.removeTransport(this.dcConfigurator.chosenServers, transport);
+
+           if (networker) {
+             transport = this.chooseServer(authData.dc, connectionType, newTransportType);
+           }
+         }
+
+         this.changeNetworkerTransport(networker, transport);
+     
+         this.setOnDrainIfNeeded(networker);
+         return networker;
   }
 
   public getNetworkerVoid(dcId: DcId) {
@@ -603,7 +644,8 @@ export class ApiManager extends ApiManagerMethods {
 
         if(error.code === 401 && this.baseDcId === dcId) {
           if(error.type !== 'SESSION_PASSWORD_NEEDED') {
-            sessionStorage.delete('dc')
+            this.multipleAccountManager.onLogOut();
+            sessionStorage.delete('dc')            
             sessionStorage.delete('user_auth'); // ! возможно тут вообще не нужно это делать, но нужно проверить случай с USER_DEACTIVATED (https://core.telegram.org/api/errors)
             // this.telegramMeNotify(false);
           }
@@ -724,4 +766,38 @@ export class ApiManager extends ApiManagerMethods {
 
     return deferred;
   }
+
+  public invokeApiWithNetworker<T extends keyof MethodDeclMap>(method: T, params: MethodDeclMap[T]['req'] = {},
+    options: InvokeApiOptions = {}, customNetworker: MTPNetworker): CancellablePromise<MethodDeclMap[T]['res']> {
+  
+    const deferred = deferredPromise<MethodDeclMap[T]['res']>();
+
+    const rejectPromise = async (error: ApiError) => {     
+    };
+
+    const performRequest = (): Promise<any> => {    
+      const promise = customNetworker.wrapApiCall(method, params, options);    
+      return promise.catch((error: ApiError) => {      
+        if (customNetworker) {
+          return;
+        }
+      
+      });
+    }
+   
+    let p: Promise<MTPNetworker>;
+   
+    p = Promise.resolve(customNetworker)
+    p.then((networker) => {      
+      const promise = performRequest();
+      customNetworker.attachPromise(deferred, options as MTMessage);
+      return promise;
+    })
+      .then(deferred.resolve.bind(deferred))
+      .catch(rejectPromise)
+      .catch(deferred.reject.bind(deferred));
+
+    return deferred;
+  }
+
 }

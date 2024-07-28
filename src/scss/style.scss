@@ -413,6 +413,9 @@
 @import "partials/leftSidebar";
 @import "partials/rightSidebar";
 @import "partials/mediaViewer";
+@import "partials/mediaEditor";
+@import "partials/multipleAccounts";
+
 @import "partials/scrollable";
 @import "partials/emojiDropdown";
 @import "partials/selector";
@@ -486,6 +489,7 @@
 @import "partials/popups/aboutAd";
 @import "partials/popups/deleteMegagroupMessages";
 @import "partials/popups/stars";
+@import "partials/popups/addAccountPremium";
 
 @import "partials/pages/pages";
 @import "partials/pages/authCode";

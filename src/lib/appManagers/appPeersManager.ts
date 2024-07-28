@@ -74,9 +74,12 @@ export class AppPeersManager extends AppManager {
   }
 
   public getPeerString(peerId: PeerId) {
+    console.log('#UPD buildNotification #SRES _ 11')
     if(peerId.isUser()) {
+      console.log('#UPD buildNotification #SRES _ 1e',peerId)
       return this.appUsersManager.getUserString(peerId.toUserId());
     }
+    console.log('#UPD buildNotification #SRES _ 1d')
     return this.appChatsManager.getChatString(peerId.toChatId());
   }
 

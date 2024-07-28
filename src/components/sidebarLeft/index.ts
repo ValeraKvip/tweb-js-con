@@ -22,7 +22,7 @@ import AppArchivedTab from './tabs/archivedTab';
 import AppAddMembersTab from './tabs/addMembers';
 import I18n, {i18n} from '../../lib/langPack';
 import AppPeopleNearbyTab from './tabs/peopleNearby';
-import {ButtonMenuItemOptions} from '../buttonMenu';
+import ButtonMenu, {ButtonMenuItemOptions} from '../buttonMenu';
 import CheckboxField from '../checkboxField';
 import {IS_MOBILE_SAFARI} from '../../environment/userAgent';
 import appNavigationController, {NavigationItem} from '../appNavigationController';
@@ -74,6 +74,17 @@ import {makeMediaSize} from '../../helpers/mediaSize';
 import ReactionElement from '../chat/reaction';
 import setBlankToAnchor from '../../lib/richTextProcessor/setBlankToAnchor';
 
+import appRuntimeManager from '../../lib/appManagers/appRuntimeManager';
+import webPushApiManager from '../../lib/mtproto/webPushApiManager';
+import PopupElement from '../popups';
+import PopupAddAccountPremium from '../popups/addAccountPremium';
+import filterAsync from '../../helpers/array/filterAsync';
+import { toastNew } from '../toast';
+import { IDB } from '../../lib/files/idb';
+import AppStorage from '../../lib/storage';
+import CacheStorageController from '../../lib/files/cacheStorage';
+import DialogsStorage from '../../lib/storages/dialogs';
+
 export const LEFT_COLUMN_ACTIVE_CLASSNAME = 'is-left-column-shown';
 
 export class AppSidebarLeft extends SidebarSlider {
@@ -102,6 +113,77 @@ export class AppSidebarLeft extends SidebarSlider {
   construct(managers: AppManagers) {
     this.managers = managers;
     // this._selectTab(0); // make first tab as default
+    requestAnimationFrame(() => {
+       managers.multipleAccountManager.start();
+      //  apiManagerProxy.addEventListener('notificationBuild', async (options) => {
+      //   console.log('#notificationBuildwwcc')});
+      // const p = PopupElement.createPopup(PopupAddAccountPremium);
+      // p.show()
+      requestAnimationFrame(async()=>{
+      
+      })
+    })
+
+    let multiAccountBlock: HTMLElement;
+    const showAccounts = async () => {
+      const accounts = await managers.multipleAccountManager.getAccounts();
+      const accountsContainer = multiAccountBlock = appDialogsManager.createChatList();
+      accountsContainer.classList.add('my-accounts');
+      if (accounts?.length) {
+        const currentAuth = await sessionStorage.get('user_auth');    
+        accounts.forEach(async (account) => {
+          const accountDialog = appDialogsManager.addDialogNew({
+            peerId: account.user_auth.id,
+            autonomous: true,
+            container: accountsContainer,
+            avatarSize: 'small',
+            meAsSaved: false,
+            rippleEnabled: true,
+            wrapOptions: {
+              middleware: this.middlewareHelper.get()
+            },
+            withStories: false
+          });
+
+          accountDialog.container.onclick = async () => {
+
+            if (await managers.multipleAccountManager.switchAccount(account.user_auth.id)) {
+              //webPushApiManager.forceUnsubscribe(),
+              await managers.appStateManager.pushToState('authState',  {_: 'authStateSignQr'});
+              webPushApiManager.forceUnsubscribe(),
+                //                  appRuntimeManager.reload();
+                // AppStorage.toggleStorage(false, true),
+                // CacheStorageController.toggleStorage(false, true),
+                // IDB.closeDatabases();
+                //location.reload();
+                appRuntimeManager.reload();
+            }
+          }
+     
+          let unreadCount = 0;
+          rootScope.addEventListener('new_unread', async (id) => {
+          
+            if (id == account.user_auth.id) {
+              ++unreadCount
+              if (!accountDialog.dom?.unreadBadge) {
+                accountDialog.createUnreadBadge();
+              
+              }
+              accountDialog.dom.unreadBadge.textContent = String(unreadCount);
+            }
+          });
+
+
+          if(account.user_auth.id === currentAuth?.id){           
+            accountDialog.container.append(Icon('check'))
+          }
+        });
+
+      }
+
+    }
+    showAccounts();
+
 
     this.inputSearch = new InputSearch();
     (this.inputSearch.input as HTMLInputElement).placeholder = ' ';
@@ -156,117 +238,218 @@ export class AppSidebarLeft extends SidebarSlider {
       themeCheckboxField.setValueSilently(themeController.getTheme().name === 'night');
     });
 
-    const menuButtons: (ButtonMenuItemOptions & {verify?: () => boolean | Promise<boolean>})[] = [{
-      icon: 'savedmessages',
-      text: 'SavedMessages',
-      onClick: () => {
-        setTimeout(() => { // menu doesn't close if no timeout (lol)
-          appImManager.setPeer({
-            peerId: appImManager.myId
+    let moreMenu: HTMLElement;
+
+    const moreBtn: typeof menuButtons[0] = {
+      icon: 'more',
+      text: 'More',
+      keepOpen: true,
+      onClick: async () => {
+
+        if (!moreMenu) {
+
+          const btns: (ButtonMenuItemOptions & { verify?: () => boolean | Promise<boolean> })[] = [
+
+            {
+              icon: 'darkmode',
+              text: 'DarkMode',
+              onClick: () => {
+
+              },
+              checkboxField: themeCheckboxField
+            }, {
+              icon: 'animations',
+              text: 'Animations',
+              onClick: () => {
+
+              },
+              checkboxField: new CheckboxField({
+                toggle: true,
+                checked: liteMode.isAvailable('animations'),
+                stateKey: joinDeepPath('settings', 'liteMode', 'animations'),
+                stateValueReverse: true
+              }),
+              verify: () => !liteMode.isEnabled()
+            }, {
+              icon: 'animations',
+              text: 'LiteMode.Title',
+              onClick: () => {
+                this.createTab(AppPowerSavingTab).open();
+              },
+              verify: () => liteMode.isEnabled()
+            }, {
+              icon: 'help',
+              text: 'TelegramFeatures',
+              onClick: () => {
+                const url = I18n.format('TelegramFeaturesUrl', true);
+                appImManager.openUrl(url);
+              }
+            }, {
+              icon: 'bug',
+              text: 'ReportBug',
+              onClick: () => {
+                const a = document.createElement('a');
+                setBlankToAnchor(a);
+                a.href = 'https://bugs.telegram.org/?tag_ids=40&sort=time';
+                document.body.append(a);
+                a.click();
+                setTimeout(() => {
+                  a.remove();
+                }, 0);
+              }
+            }, {
+              icon: 'char' as Icon,
+              className: 'a',
+              text: 'ChatList.Menu.SwitchTo.A',
+              onClick: () => {
+                Promise.all([
+                  sessionStorage.set({ kz_version: 'Z' }),
+                  sessionStorage.delete('tgme_sync')
+                ]).then(() => {
+                  location.href = 'https://web.telegram.org/a/';
+                });
+              },
+              verify: () => App.isMainDomain
+            }, /* {
+        icon: 'char w',
+        text: 'ChatList.Menu.SwitchTo.Webogram',
+        onClick: () => {
+          sessionStorage.delete('tgme_sync').then(() => {
+            location.href = 'https://web.telegram.org/?legacy=1';
           });
-        }, 0);
-      }
-    }, btnArchive, {
-      icon: 'stories',
-      text: 'MyStories.Title',
-      onClick: () => {
-        this.createTab(AppMyStoriesTab).open();
-      },
-      verify: () => !TEST_NO_STORIES
-    }, {
-      icon: 'user',
-      text: 'Contacts',
-      onClick: onContactsClick
-    }, IS_GEOLOCATION_SUPPORTED ? {
-      icon: 'group',
-      text: 'PeopleNearby',
-      onClick: () => {
-        this.createTab(AppPeopleNearbyTab).open();
-      }
-    } : undefined, {
-      icon: 'settings',
-      text: 'Settings',
-      onClick: () => {
-        this.createTab(AppSettingsTab).open();
-      }
-    }, {
-      icon: 'darkmode',
-      text: 'DarkMode',
-      onClick: () => {
+        },
+        verify: () => App.isMainDomain
+      }, */ {
+              icon: 'plusround',
+              text: 'PWA.Install',
+              onClick: () => {
+                const installPrompt = getInstallPrompt();
+                installPrompt?.();
+              },
+              verify: () => !!getInstallPrompt()
+            }];
 
-      },
-      checkboxField: themeCheckboxField
-    }, {
-      icon: 'animations',
-      text: 'Animations',
-      onClick: () => {
 
-      },
-      checkboxField: new CheckboxField({
-        toggle: true,
-        checked: liteMode.isAvailable('animations'),
-        stateKey: joinDeepPath('settings', 'liteMode', 'animations'),
-        stateValueReverse: true
-      }),
-      verify: () => !liteMode.isEnabled()
-    }, {
-      icon: 'animations',
-      text: 'LiteMode.Title',
-      onClick: () => {
-        this.createTab(AppPowerSavingTab).open();
-      },
-      verify: () => liteMode.isEnabled()
-    }, {
-      icon: 'help',
-      text: 'TelegramFeatures',
-      onClick: () => {
-        const url = I18n.format('TelegramFeaturesUrl', true);
-        appImManager.openUrl(url);
+       
+          const f = (b: (typeof btns[0])[]) => filterAsync(b, (button) => button?.verify ? button.verify() ?? false : true);
+          const filteredButtons = await f(btns);
+            moreMenu = await ButtonMenu({  
+            buttons: filteredButtons,           
+          });
+
+          for (let btn of filteredButtons) {
+            if (btn.element) {             
+              btn.element.onclick = (e) => {              
+                if(btn.checkboxField){
+                  btn.checkboxField.checked = !btn.checkboxField.checked;
+                }else{
+                  btn.onClick(e);
+                }                               
+              }
+            }
+          }
+
+          const btnMenuFooter = document.createElement('a');
+          btnMenuFooter.href = 'https://github.com/morethanwords/tweb/blob/master/CHANGELOG.md';
+          setBlankToAnchor(btnMenuFooter);
+          btnMenuFooter.classList.add('btn-menu-footer');
+          btnMenuFooter.addEventListener(CLICK_EVENT_NAME, (e) => {
+            e.stopPropagation();
+            contextMenuController.close();
+          });
+          const t = document.createElement('span');
+          t.classList.add('btn-menu-footer-text');
+          t.textContent = 'Telegram Web' + App.suffix + ' '/* ' alpha ' */ + App.versionFull;
+          btnMenuFooter.append(t);
+               moreMenu.append(btnMenuFooter);
+        }
+
+          const a = moreMenu.querySelector('.a .btn-menu-item-icon');
+        if (a) a.textContent = 'A';
+        moreMenu.classList.add('more-menu');
+        document.body.appendChild(moreMenu);
+
+        const rect = moreBtn.element?.getBoundingClientRect();
+        moreMenu.style.top = rect.top + 'px';
+        moreMenu.style.left = rect.right + 'px';
       }
-    }, {
-      icon: 'bug',
-      text: 'ReportBug',
-      onClick: () => {
-        const a = document.createElement('a');
-        setBlankToAnchor(a);
-        a.href = 'https://bugs.telegram.org/?tag_ids=40&sort=time';
-        document.body.append(a);
-        a.click();
-        setTimeout(() => {
-          a.remove();
-        }, 0);
-      }
-    }, {
-      icon: 'char' as Icon,
-      className: 'a',
-      text: 'ChatList.Menu.SwitchTo.A',
-      onClick: () => {
-        Promise.all([
-          sessionStorage.set({kz_version: 'Z'}),
-          sessionStorage.delete('tgme_sync')
-        ]).then(() => {
-          location.href = 'https://web.telegram.org/a/';
-        });
+    }
+
+
+
+
+    const menuButtons: (ButtonMenuItemOptions & { verify?: () => boolean | Promise<boolean> })[] = [
+      {
+        icon: 'plus',
+        text: 'AddAccount',
+        onClick: () => {
+        
+          setTimeout(async () => {          
+            const canAddAccount = await managers.multipleAccountManager.canAddAccount();
+            if (canAddAccount === 1) {
+              await managers.multipleAccountManager.addAccount();
+              await managers.appStateManager.pushToState('authState',  {_: 'authStateSignQr'});
+               webPushApiManager.forceUnsubscribe();
+               appRuntimeManager.reload();
+            }else if(canAddAccount === 0){
+              PopupElement.createPopup(PopupAddAccountPremium).show();
+            }else{
+              toastNew({
+                langPackKey: 'Account.Max',             
+              });
+            }           
+
+          }, 0);
+        }
       },
-      verify: () => App.isMainDomain
-    }, /* {
-      icon: 'char w',
-      text: 'ChatList.Menu.SwitchTo.Webogram',
-      onClick: () => {
-        sessionStorage.delete('tgme_sync').then(() => {
-          location.href = 'https://web.telegram.org/?legacy=1';
-        });
+      {
+        className: 'btn-menu-hor ',
+        onClick: () => { },
+        verify: async () => true
       },
-      verify: () => App.isMainDomain
-    }, */ {
-      icon: 'plusround',
-      text: 'PWA.Install',
-      onClick: () => {
-        const installPrompt = getInstallPrompt();
-        installPrompt?.();
+      {
+        icon: 'savedmessages',
+        text: 'SavedMessages',
+        onClick: () => {
+          setTimeout(() => { // menu doesn't close if no timeout (lol)
+            appImManager.setPeer({
+              peerId: appImManager.myId
+            });
+          }, 0);
+        }
+      }, btnArchive, {
+        icon: 'stories',
+        text: 'MyStories.Title',
+        onClick: () => {
+          this.createTab(AppMyStoriesTab).open();
+        },
+        verify: () => !TEST_NO_STORIES
+      }, {
+        icon: 'user',
+        text: 'Contacts',
+        onClick: onContactsClick
+      }, IS_GEOLOCATION_SUPPORTED ? {
+        icon: 'group',
+        text: 'PeopleNearby',
+        onClick: () => {
+          this.createTab(AppPeopleNearbyTab).open();
+        }
+      } : undefined,
+      {
+        className: 'btn-menu-hor ',
+        onClick: () => { },
+        verify: async () => true,
       },
-      verify: () => !!getInstallPrompt()
-    }];
+      {
+        icon: 'settings',
+        text: 'Settings',
+        onClick: () => {
+          this.createTab(AppSettingsTab).open();
+        }
+      },
+      moreBtn];
+
+
 
     const filteredButtons = menuButtons.filter(Boolean);
     const filteredButtonsSliced = filteredButtons.slice();
@@ -297,29 +480,29 @@ export class AppSidebarLeft extends SidebarSlider {
           return button;
         });
 
-        buttons.splice(3, 0, ...attachMenuBotsButtons);
+        attachMenuBotsButtons.push({
+          className: 'btn-menu-hor ',
+          onClick: () => { },
+          verify: async () => true
+        })
+
+        buttons.splice(7, 0, ...attachMenuBotsButtons);
         filteredButtons.splice(0, filteredButtons.length, ...buttons);
       },
       onOpen: (e, btnMenu) => {
-        const btnMenuFooter = document.createElement('a');
-        btnMenuFooter.href = 'https://github.com/morethanwords/tweb/blob/master/CHANGELOG.md';
-        setBlankToAnchor(btnMenuFooter);
-        btnMenuFooter.classList.add('btn-menu-footer');
-        btnMenuFooter.addEventListener(CLICK_EVENT_NAME, (e) => {
-          e.stopPropagation();
-          contextMenuController.close();
-        });
-        const t = document.createElement('span');
-        t.classList.add('btn-menu-footer-text');
-        t.textContent = 'Telegram Web' + App.suffix + ' '/* ' alpha ' */ + App.versionFull;
-        btnMenuFooter.append(t);
-        btnMenu.classList.add('has-footer');
-        btnMenu.append(btnMenuFooter);
-
-        const a = btnMenu.querySelector('.a .btn-menu-item-icon');
-        if(a) a.textContent = 'A';
 
         btnArchive.element?.append(this.archivedCount);
+
+
+        if (multiAccountBlock) {
+          btnMenu.prepend(multiAccountBlock);
+        }
+
+        moreBtn.element?.append(Icon('avatarnext'));
+      },
+      onClose: () => {
+        moreMenu?.remove();
+        moreMenu = null;
       },
       noIcon: true
     });

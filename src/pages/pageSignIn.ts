@@ -28,6 +28,9 @@ import rootScope from '../lib/rootScope';
 import TelInputField from '../components/telInputField';
 import apiManagerProxy from '../lib/mtproto/mtprotoworker';
 import CountryInputField from '../components/countryInputField';
+import webPushApiManager from '../lib/mtproto/webPushApiManager';
+import ButtonIcon from '../components/buttonIcon';
+import appRuntimeManager from '../lib/appManagers/appRuntimeManager';
 
 // import _countries from '../countries_pretty.json';
 let btnNext: HTMLButtonElement = null, btnQr: HTMLButtonElement;
@@ -222,6 +225,26 @@ const onFirstMount = () => {
   });
 
   inputWrapper.append(countryInputField.container, telInputField.container, signedCheckboxField.label, btnNext, btnQr);
+
+  rootScope.managers.multipleAccountManager.hasRetreatTo().then(id => {
+    if (id) {
+      const btnRetreat = Button('btn-primary btn-secondary btn-primary-transparent primary', { text: 'Account.Retreat' });
+      const retreat = async () => {
+        if (await rootScope.managers.multipleAccountManager.retreatTo(id)) {
+          webPushApiManager?.forceUnsubscribe(),
+           // location.reload();
+           appRuntimeManager.reload();
+        }       
+      }     
+      btnRetreat.addEventListener('click', retreat);
+      inputWrapper.append(btnRetreat);
+
+      const crossBtn = ButtonIcon('close auth-retreat')
+      crossBtn.addEventListener('click', retreat);
+      document.querySelector('#auth-pages').append(crossBtn);
+    
+    }
+  }).catch(() => { });
 
   const h4 = document.createElement('h4');
   h4.classList.add('text-center');

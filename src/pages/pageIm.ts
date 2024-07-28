@@ -30,7 +30,8 @@ const onFirstMount = () => {
   return Promise.all([
     import('../lib/appManagers/appDialogsManager'),
     loadFonts()/* .then(() => new Promise((resolve) => window.requestAnimationFrame(resolve))) */,
-    'requestVideoFrameCallback' in HTMLVideoElement.prototype ? Promise.resolve() : import('../helpers/dom/requestVideoFrameCallbackPolyfill')
+    'requestVideoFrameCallback' in HTMLVideoElement.prototype ? Promise.resolve() : import('../helpers/dom/requestVideoFrameCallbackPolyfill'),
+    rootScope.managers.multipleAccountManager.clearRetreatTo(),
   ]).then(([appDialogsManager]) => {
     appDialogsManager.default.start();
     setTimeout(() => {

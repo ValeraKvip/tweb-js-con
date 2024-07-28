@@ -57,6 +57,7 @@ import AppStatisticsManager from './appStatisticsManager';
 import AppBusinessManager from './appBusinessManager';
 import AppTranslationsManager from './appTranslationsManager';
 import AppGifsManager from './appGifsManager';
+import { MultipleAccountManager } from './appMultipleAccountManager';
 
 export default function createManagers(appStoragesManager: AppStoragesManager, userId: UserId) {
   const managers = {
@@ -110,7 +111,8 @@ export default function createManagers(appStoragesManager: AppStoragesManager, u
     appStatisticsManager: new AppStatisticsManager,
     appBusinessManager: new AppBusinessManager,
     appTranslationsManager: new AppTranslationsManager,
-    appGifsManager: new AppGifsManager
+    appGifsManager: new AppGifsManager,
+    multipleAccountManager: new MultipleAccountManager
   };
 
   type T = typeof managers;

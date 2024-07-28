@@ -1,0 +1,93 @@
+.my-accounts {
+    width: auto;
+    .chatlist-chat {
+        &.row-with-padding {
+            padding-inline-start: 48px !important;
+            margin: 0;
+        }
+    }
+    padding: 0 !important;
+    margin: 0 5px;
+
+    background-color: var(--background-secondary);
+
+    .row {
+        min-height: 32px !important;
+        height: 32px !important;
+        border-radius: 0.3125rem !important;
+
+        .tgico {
+            position: absolute;
+            top: 15px;
+            left: 25px;
+            background: var(--link-color);
+            border-radius: 100%;
+            font-size: 14px;
+            color: white;
+        }
+    }
+
+    
+    .avatar {
+        width: 24px !important;
+        height: 24px !important;
+
+        inset-inline-start: 10px !important;
+        .avatar-photo {
+            width: 24px !important;
+            height: 24px !important;
+        }
+    }
+    .dialog-title {
+        text-align: left;
+        margin: 0;
+        padding: 0;
+    }
+    .dialog-subtitle {
+        display: block;
+        position: absolute;
+        right: 10px;
+        top:2px;
+
+        .badge {
+            background-color: var(--chatlist-status-color)!important;
+            //  position: absolute;
+            --size: 1.375rem;
+            --padding: 0.4375rem;
+            border-radius: calc(var(--size) / 2);
+            font-weight: var(--font-weight-bold);
+            color: var(--badge-text-color)!important;
+            font-size: 0.875rem;
+            text-align: center;
+            height: var(--size);
+            min-width: var(--size);
+            line-height: var(--size) !important;
+            padding: 0 var(--padding);
+            transform: scale(1) ;
+        }
+    }
+}
+
+.btn-menu {
+    .btn-menu-hor {
+        height: 1px;
+        background: var(--border-color);
+        margin: 10px 0;
+        padding: 0;
+    }
+}
+
+.more-menu {
+    position: absolute;
+    left: 220px;
+    visibility: visible;
+    opacity: 1;
+    transform: scale3d(1, 1, 1);
+    pointer-events: all;
+    z-index: 10000;
+
+    .btn-menu-footer {
+        color: var(--secondary-color);
+        font-size: 12px;
+    }
+}

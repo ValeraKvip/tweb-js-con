@@ -211,6 +211,43 @@
     overflow: hidden;
   }
 
+  .popup-photo {
+    .popup-item-media {
+      .float-buttons {
+        display: flex;
+      //  flex-wrap: wrap;
+        position: absolute;
+        bottom: 6px;
+        z-index: 2;
+        border-radius: 90px;     
+        background-color: rgba(0, 0, 0, 0.5);
+      //  padding: 6px 10px;       
+        flex-direction: row;
+        justify-content: space-between;
+       // gap: 8px;
+        left: 50%;
+        width: 112px;
+        transform: translateX(-50%);
+  
+        span {
+          color: white;
+        }
+  
+        button{
+          flex: 1 1 auto;
+        }
+       
+      }
+
+      &:hover {
+        .float-buttons {
+          display: flex;
+        }
+      }
+    }
+  }
+
+
   .popup-photo > .popup-item + .popup-item {
     margin-top: .5rem;
   }

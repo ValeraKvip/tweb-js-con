@@ -581,6 +581,9 @@ export class AppImManager extends EventListenerBase<{
       }
 
       uiNotificationsManager.buildNotificationQueue(options);
+
+      //TODO @see superMessagePort.ts:504
+      rootScope.dispatchEvent('new_unread', options.fromAccount );
     });
 
     this.addEventListener('peer_changed', async({peerId}) => {
@@ -656,10 +659,13 @@ export class AppImManager extends EventListenerBase<{
       const canvases = Array.from(document.querySelectorAll('canvas')) as HTMLCanvasElement[];
       canvases.forEach((canvas) => {
         const context = canvas.getContext('2d');
-        const oldFillStyle = context.fillStyle;
-        context.fillStyle = 'transparent';
-        context.fillRect(0, 0, 1, 1);
-        context.fillStyle = oldFillStyle;
+              // ! FIX BUG. NOT ALL CANVASES ARE NOW 2d. New webgl2 canvas is in MediaEditor now.
+            if (context) {
+              const oldFillStyle = context.fillStyle;
+              context.fillStyle = 'transparent';
+              context.fillRect(0, 0, 1, 1);
+              context.fillStyle = oldFillStyle;
+            }
       });
     });
 

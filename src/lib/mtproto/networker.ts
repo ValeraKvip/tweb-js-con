@@ -1392,6 +1392,10 @@ export default class MTPNetworker {
 
   public async onTransportData(data: Uint8Array, packetTime: number = Date.now()) {
     const response = await this.parseResponse(data);
+    if(!response){
+      return;
+      //throw new Error('err#');
+    }
     // this.debug && this.log.debug('server response', response);
     this.processMessage(response.response, response.messageId, response.sessionId, packetTime);
   }
@@ -1408,6 +1412,7 @@ export default class MTPNetworker {
 
     const authKeyId = deserializer.fetchIntBytes(64, true, 'auth_key_id');
     if(!bytesCmp(authKeyId, this.authKeyId)) {
+      return;
       throw new Error('[MT] Invalid server auth_key_id: ' + bytesToHex(authKeyId));
     }
 

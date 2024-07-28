@@ -22,6 +22,10 @@ $inactive-opacity: .4;
     background: #000;
   }
 
+  &-editor{
+    z-index: 10000;
+  }
+
   &-author {
     height: 100%;
     cursor: pointer;

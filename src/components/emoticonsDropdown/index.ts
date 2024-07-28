@@ -129,10 +129,12 @@ export class EmoticonsDropdown extends DropdownHover {
     getOpenPosition?: () => DOMRectEditable,
     tabsToRender?: EmoticonsTab[],
     customOnSelect?: (emoji: {element: HTMLElement} & ReturnType<typeof getEmojiFromElement>) => void,
+    keepOpen?: boolean
   } = {}) {
     super({
       element: renderEmojiDropdownElement(),
-      ignoreOutClickClassName: 'input-message-input'
+      ignoreOutClickClassName: 'input-message-input',
+      keepOpen:options.keepOpen
     });
     safeAssign(this, options);
 
@@ -352,7 +354,7 @@ export class EmoticonsDropdown extends DropdownHover {
       this.chatInput.messageInputField.simulateInputEvent();
     }, {listenerSetter: this.listenerSetter});
 
-    const HIDE_EMOJI_TAB = IS_APPLE_MOBILE && false;
+    const HIDE_EMOJI_TAB = (IS_APPLE_MOBILE && false) || !this.getTab(EmojiTab);
 
     const INIT_TAB_ID = HIDE_EMOJI_TAB ? this.getTab(StickersTab).tabId : this.getTab(EmojiTab).tabId;
 
@@ -438,7 +440,7 @@ export class EmoticonsDropdown extends DropdownHover {
     };
 
     const action = rights[id];
-    if(action && !this.rights[action]) {
+    if(action && !this.rights[action] && !this.isStandalone) {
       toastNew({langPackKey: POSTING_NOT_ALLOWED_MAP[action]});
       return false;
     }

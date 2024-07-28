@@ -18,6 +18,9 @@ import fixBase64String from '../helpers/fixBase64String';
 import bytesCmp from '../helpers/bytes/bytesCmp';
 import bytesToBase64 from '../helpers/bytes/bytesToBase64';
 import textToSvgURL from '../helpers/textToSvgURL';
+import webPushApiManager from '../lib/mtproto/webPushApiManager';
+import ButtonIcon from '../components/buttonIcon';
+import appRuntimeManager from '../lib/appManagers/appRuntimeManager';
 
 const FETCH_INTERVAL = 3;
 
@@ -69,7 +72,29 @@ const onFirstMount = async() => {
   const options: {dcId?: DcId, ignoreErrors: true} = {ignoreErrors: true};
   let prevToken: Uint8Array | number[];
 
-  const iterate = async(isLoop: boolean) => {
+
+  rootScope.managers.multipleAccountManager.hasRetreatTo().then(id => {   
+    if (id) {
+      const btnRetreat = Button('btn-primary btn-secondary btn-primary-transparent primary', { text: 'Account.Retreat' });
+      const retreat = async () => {
+        if (await rootScope.managers.multipleAccountManager.retreatTo(id)) {
+          webPushApiManager?.forceUnsubscribe(),
+          //  location.reload();
+          appRuntimeManager.reload();
+        }
+        stop = true;
+      }     
+      btnRetreat.addEventListener('click', retreat);
+      inputWrapper.append(btnRetreat);
+
+      const crossBtn = ButtonIcon('close auth-retreat')
+      crossBtn.addEventListener('click', retreat);
+      document.querySelector('#auth-pages').append(crossBtn);
+    
+    }
+  }).catch(() => { });
+
+  const iterate = async (isLoop: boolean) => {
     try {
       let loginToken = await rootScope.managers.apiManager.invokeApi('auth.exportLoginToken', {
         api_id: App.id,

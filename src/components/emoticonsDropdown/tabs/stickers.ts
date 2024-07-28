@@ -33,6 +33,7 @@ import SuperStickerRenderer from './SuperStickerRenderer';
 
 type StickersTabItem = {element: HTMLElement, document: Document.document};
 export default class StickersTab extends EmoticonsTabC<StickersTabCategory<StickersTabItem>, Document.document[]> {
+  public allowCategoryClick: boolean = true;
   private stickerRenderer: SuperStickerRenderer;
 
   constructor(managers: AppManagers) {
@@ -135,12 +136,14 @@ export default class StickersTab extends EmoticonsTabC<StickersTabCategory<Stick
       }
     }); */
 
-    const intersectionOptions = this.emoticonsDropdown.intersectionOptions;
-    this.categoriesIntersector = new VisibilityIntersector(this.onCategoryVisibility, intersectionOptions);
+    
+      const intersectionOptions = this.emoticonsDropdown.intersectionOptions;
+      this.categoriesIntersector = new VisibilityIntersector(this.onCategoryVisibility, intersectionOptions);
+  
 
     this.scrollable.container.addEventListener('click', (e) => {
       const target = e.target as HTMLElement;
-      if(findUpClassName(target, 'category-title')) {
+      if(this.allowCategoryClick && findUpClassName(target, 'category-title')) {
         const container = findUpClassName(target, 'emoji-category');
         const category = this.categoriesMap.get(container);
         if(category.local) {

@@ -83,7 +83,8 @@ export type NotificationBuildTaskPayload = {
   message: Message.message | Message.messageService,
   fwdCount?: number,
   peerReaction?: MessagePeerReaction,
-  peerTypeNotifySettings?: PeerNotifySettings
+  peerTypeNotifySettings?: PeerNotifySettings,
+  fromAccount?:number
 };
 
 export type TabState = {
@@ -290,6 +291,7 @@ class ApiManagerProxy extends MTProtoMessagePort {
     });
 
     rootScope.addEventListener('logging_out', () => {
+      rootScope.managers.multipleAccountManager.onLogOut();
       const toClear: CacheStorageDbName[] = ['cachedFiles', 'cachedStreamChunks'];
       Promise.all([
         toggleStorages(false, true),

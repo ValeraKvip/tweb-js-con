@@ -2818,6 +2818,8 @@ const lang = {
   'Premium.Boarding.AppStore.Cancelled': 'Purchase was canceled or failed.',
   'Premium.Boarding.AppStore.Success': 'You successfully subscribed for Telegram Premium.',
   'Premium.Boarding.Subscribe': 'Subscribe for %@ per month',
+  'Premium.Boarding.LimitReached':'Limit Reached',
+  'Premium.Boarding.Desc':'You have reached the limit of **3** connected accounts. You can add more by subscribing to **Telegram Premium.**',
   'Premium.Offset.AlreadyHave': 'You already have Telegram Premium.',
   'GiftLink.UseSuccess': 'You successfully activated gift link.',
   'Giveaway.Type.Specific.Modal.SelectUsers': 'Select Users',
@@ -2844,7 +2846,61 @@ const lang = {
   'Chat.UploadLimit.Text': {
     'one_value': 'Subscribe to [Telegram Premium]() to increase upload speeds %d time.',
     'other_value': 'Subscribe to [Telegram Premium]() to increase upload speeds %d times.'
-  }
+  },
+
+  'MediaEditor.Size': 'Size',
+  
+
+  'MediaEditor.Brush.Tool': 'Tool',
+  'MediaEditor.Text.Pen': 'Pen',
+  'MediaEditor.Text.Arrow': 'Arrow',
+  'MediaEditor.Text.Brush': 'Brush',
+  'MediaEditor.Text.Neon': 'Neon',
+  'MediaEditor.Text.Blur': 'Blur',
+  'MediaEditor.Text.Eraser': 'Eraser',
+
+  'MediaEditor.Enhance.Enhance': 'Enhance',
+  'MediaEditor.Enhance.Brightness': 'Brightness',
+  'MediaEditor.Enhance.Contrast': 'Contrast',
+  'MediaEditor.Enhance.Saturation': 'Saturation',
+  'MediaEditor.Enhance.Warmth': 'Warmth',
+  'MediaEditor.Enhance.Fade': 'Fade',
+  'MediaEditor.Enhance.Highlights': 'Highlights',
+  'MediaEditor.Enhance.Shadows': 'Shadows',
+  'MediaEditor.Enhance.Vignette': 'Vignette',
+  'MediaEditor.Enhance.Grain': 'Grain',
+  'MediaEditor.Enhance.Sharpen': 'Sharpen',
+
+  'MediaEditor.Crop.Free': 'Free',
+  'MediaEditor.Crop.Original': 'Original',
+  'MediaEditor.Crop.Square': 'Square',
+  'MediaEditor.Crop.3x2': '3x2',
+  'MediaEditor.Crop.4x3': '4x3',
+  'MediaEditor.Crop.5x4': '5x4',
+  'MediaEditor.Crop.7x6': '7x5',
+  'MediaEditor.Crop.16x9': '16x9',
+  'MediaEditor.Crop.2x3': '2x3',
+  'MediaEditor.Crop.3x4': '3x4',
+  'MediaEditor.Crop.4x5': '4x5',
+  'MediaEditor.Crop.6x7': '5x7',
+  'MediaEditor.Crop.9x16': '9x16',
+  'MediaEditor.Crop.AspectRatio': 'Aspect ratio',
+
+  'MediaEditor.Text.Roboto': 'Roboto',
+  'MediaEditor.Text.TypeWriter': 'Typewriter',
+  'MediaEditor.Text.AvenirNext': 'Avenir Next',
+  'MediaEditor.Text.CourierNew': 'Courier New',
+  'MediaEditor.Text.Noteworthy': 'Noteworthy',
+  'MediaEditor.Text.Georgia': 'Georgia',
+  'MediaEditor.Text.Papyrus': 'Papyrus',
+  'MediaEditor.Text.SnellRoundhand': 'SnellRoundhand',
+  'MediaEditor.Text.Font': 'Font',
+  'MediaEditor.Text.Hint': 'Your text here',
+  'More':'More',
+  'AddAccount':'Add Account',
+  'Account.Max':'Reached the maximum number of accounts',
+   'Account.Retreat':'Return to current account'
+
 };
 
 export default lang;

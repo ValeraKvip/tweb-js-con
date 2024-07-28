@@ -36,12 +36,14 @@ export default class DropdownHover extends EventListenerBase<{
   protected ignoreButtons: Set<HTMLElement>;
   protected navigationItem: NavigationItem;
   protected ignoreOutClickClassName: string;
-  protected timeouts: {[type in DropdownHoverTimeoutType]?: number};
+  protected timeouts: { [type in DropdownHoverTimeoutType]?: number };
+  protected keepOpen: boolean;
   protected detachClickEvent: () => void;
 
   constructor(options: {
     element: DropdownHover['element'],
-    ignoreOutClickClassName?: string
+    ignoreOutClickClassName?: string;
+    keepOpen?: boolean;
   }) {
     super(false);
     safeAssign(this, options);
@@ -50,6 +52,7 @@ export default class DropdownHover extends EventListenerBase<{
     this.ignoreMouseOut = new Set();
     this.ignoreButtons = new Set();
     this.timeouts = {};
+    this.keepOpen = options.keepOpen ?? false;
   }
 
   public attachButtonListener(
@@ -114,7 +117,7 @@ export default class DropdownHover extends EventListenerBase<{
   };
 
   protected onMouseOut = (e: MouseEvent) => {
-    if(KEEP_OPEN || !this.isActive()) return;
+    if (KEEP_OPEN || !this.isActive() || this.keepOpen) return;
     this.clearTimeout('toggle');
 
     if(this.ignoreMouseOut.size) {

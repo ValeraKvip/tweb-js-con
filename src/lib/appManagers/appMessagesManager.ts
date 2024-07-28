@@ -6967,7 +6967,8 @@ export class AppMessagesManager extends AppManager {
   private notifyAboutMessage(message: MyMessage, options: Partial<{
     fwdCount: number,
     peerReaction: MessagePeerReaction,
-    peerTypeNotifySettings: PeerNotifySettings
+    peerTypeNotifySettings: PeerNotifySettings,
+    fromAccount?: number
   }> = {}) {
     const peerId = this.getMessagePeer(message);
 

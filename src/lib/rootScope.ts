@@ -196,7 +196,8 @@ export type BroadcastEvents = {
 
   'config': Config,
   'app_config': MTAppConfig,
-  'managers_ready': void // ! inner
+  'managers_ready': void, // ! 
+  'new_unread':number //TODO @see superMessagePort.ts:504
 };
 
 export type BroadcastEventsListeners = {

@@ -10,7 +10,7 @@ import type {DcId} from '../types';
 import {MOUNT_CLASS_TO} from '../config/debug';
 import LocalStorageController from './localStorage';
 
-const sessionStorage = new LocalStorageController<{
+export type AuthDataSingle = {
   dc: DcId,
   user_auth: UserAuth,
   state_id: number,
@@ -32,7 +32,18 @@ const sessionStorage = new LocalStorageController<{
     canRedirect: boolean,
     ts: number
   },
-  k_build: number
-}>(/* ['kz_version'] */);
+  k_build: number,
+  retreatTo?:number,
+ // access_hash:string,
+}
+
+export type AuthData = AuthDataSingle & {
+  account_1?:AuthDataSingle,
+  account_2?:AuthDataSingle,
+  account_3?:AuthDataSingle,
+  account_4?:AuthDataSingle,
+}
+
+const sessionStorage = new LocalStorageController<AuthData>(/* ['kz_version'] */);
 MOUNT_CLASS_TO.appStorage = sessionStorage;
 export default sessionStorage;

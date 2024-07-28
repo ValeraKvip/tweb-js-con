@@ -250,12 +250,14 @@ export class UiNotificationsManager {
     message,
     fwdCount,
     peerReaction,
-    peerTypeNotifySettings
+    peerTypeNotifySettings,
+    fromAccount
   }: {
     message: Message.message | Message.messageService,
     fwdCount?: number,
     peerReaction?: MessagePeerReaction,
-    peerTypeNotifySettings?: PeerNotifySettings
+    peerTypeNotifySettings?: PeerNotifySettings,
+    fromAccount?:number,
   }) {
     const peerId = message.peerId;
     const isAnyChat = peerId.isAnyChat();
@@ -330,8 +332,18 @@ export class UiNotificationsManager {
 
     notification.title = wrapPlainText(notification.title);
 
-    notification.onclick = () => {
-      appImManager.setInnerPeer({peerId, lastMsgId: message.mid, threadId});
+    notification.onclick = async () => {
+   await   appImManager.setInnerPeer({peerId, lastMsgId: message.mid, threadId});
+      if(fromAccount){
+       await rootScope.managers.multipleAccountManager.switchAccount(fromAccount);
+         webPushApiManager.forceUnsubscribe()
+         location.reload();
+
+      }
+      // else{
+      //   appImManager.setInnerPeer({peerId, lastMsgId: message.mid, threadId});
+      // }
+     
     };
 
     notification.message = notificationMessage;
@@ -343,7 +355,7 @@ export class UiNotificationsManager {
     if(peerPhoto) {
       const url = await this.managers.appAvatarsManager.loadAvatar(peerId, peerPhoto, 'photo_small');
 
-      if(!peerReaction) { // ! WARNING, message can be already read
+      if(!peerReaction && !fromAccount) { // ! WARNING, message can be already read
         message = await this.managers.appMessagesManager.getMessageByPeer(message.peerId, message.mid);
         if(!message || !message.pFlags.unread) return;
       }

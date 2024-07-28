@@ -499,6 +499,7 @@ export default class SuperMessagePort<
         throw new Error('no listener');
       }
 
+      //WHY? WHY first only? Shitcode, ok I will then shitcoding too.
       const listener = listeners.values().next().value;
 
       // @ts-ignore

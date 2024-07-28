@@ -34,10 +34,12 @@ class ContextMenuController extends OverlayClickHandler {
   }
 
   private onMouseMove = (e: MouseEvent) => {
-    const element = findUpClassName(e.target, 'btn-menu-item');
-    const inner = (element as any)?.inner as ButtonMenuItemOptions['inner'];
+    //TODO wtf?
+    // const element = findUpClassName(e.target, 'btn-menu-item');
+    // const inner = (element as any)?.inner as ButtonMenuItemOptions['inner'];
 
-    const rect = this.element.getBoundingClientRect();
+    const element = findUpClassName(e.target, 'more-menu') || this.element;
+    const rect = element.getBoundingClientRect();
     const {clientX, clientY} = e;
 
     const diffX = clientX >= rect.right ? clientX - rect.right : rect.left - clientX;
